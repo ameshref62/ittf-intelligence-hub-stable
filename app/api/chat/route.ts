@@ -45,27 +45,14 @@ RESPONSE GUIDELINES:
       },
     });
 
-    const history = messages.slice(0, -1).map((msg: any) => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    }));
+    // Build history with proper filtering
+    const history = messages
+      .slice(0, -1)
+      .filter((msg: any) => msg.content && typeof msg.content === 'string' && msg.content.trim().length > 0)
+      .map((msg: any) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: String(msg.content).trim() }],
+      }));
 
     const chat = model.startChat({ history });
-
-    // FIX: Just send the string, not an array of objects
     const result = await chat.sendMessage(userMessage);
-    const text = result.response.text();
-
-    return NextResponse.json({ 
-      content: text,
-      role: 'assistant'
-    });
-
-  } catch (error: any) {
-    console.error('Chat API Error:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to process request' },
-      { status: 500 }
-    );
-  }
-}
